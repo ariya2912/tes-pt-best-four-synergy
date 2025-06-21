@@ -21,14 +21,18 @@ class ExcelUploadController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
+        $header = $rows[0];
+        $fields = array_map('strtolower', $header);
+
         foreach ($rows as $index => $row) {
             if ($index === 0) continue; // skip header
 
-            Lead::create([
-                'nama'    => $row[0] ?? '',
-                'telepon' => $row[1] ?? '',
-                'email'   => $row[2] ?? '',
-            ]);
+            $data = [];
+            foreach ($fields as $key => $field) {
+                $data[$field] = $row[$key] ?? null;
+            }
+
+            Lead::create($data);
         }
 
         return response()->json(['message' => 'Upload berhasil']);

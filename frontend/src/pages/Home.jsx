@@ -6,11 +6,13 @@ import { getReports, saveReport, deleteReport } from "../services/api.js";
 
 const Home = () => {
   const [availableFields, setAvailableFields] = useState([]);
-  const [criteria, setCriteria] = useState({});
+  const [criteria, setCriteria] = useState([]);
   const [fields, setFields] = useState([]);
   const [reportName, setReportName] = useState("");
   const [reports, setReports] = useState([]);
+  const [selectedReports, setSelectedReports] = useState([]);
   const [reportData, setReportData] = useState(null);
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     // Fetch available fields from backend
@@ -28,8 +30,10 @@ const Home = () => {
     });
   };
 
-  const handleCriteriaChange = (field, value) => {
-    setCriteria((prev) => ({ ...prev, [field]: value }));
+  const handleCriteriaChange = (field) => {
+    setCriteria((prev) =>
+      prev.includes(field) ? prev.filter((c) => c !== field) : [...prev, field]
+    );
   };
 
   const handleFieldToggle = (field) => {
@@ -39,20 +43,27 @@ const Home = () => {
   };
 
   const saveReportTemplate = () => {
-    if (!reportName || Object.keys(criteria).length === 0 || fields.length === 0) {
+    if (!reportName || criteria.length === 0 || fields.length === 0) {
       alert("Nama report, kriteria, dan field harus diisi");
       return;
     }
     saveReport({ name: reportName, criteria, fields }).then(() => {
       setReportName("");
-      setCriteria({});
+      setCriteria([]);
       setFields([]);
       fetchReports();
     });
   };
 
-  const deleteReport = name => {
-    setReports(prev => prev.filter(r => r.name !== name));
+  const handleDeleteReport = (id) => {
+    deleteReport(id).then(() => {
+      fetchReports();
+    });
+  };
+
+  const handleExport = (id, format) => {
+    // Placeholder for export functionality
+    alert(`Export report ${id} as ${format} - feature to be implemented`);
   };
 
   const handleFileChange = e => {
@@ -85,33 +96,38 @@ const Home = () => {
       <div className="row">
         <div className="col-md-6">
           <h5>Selection Criteria</h5>
-          {availableFields.map((field) => (
-            <div key={field} className="mb-2">
-              <label>{field}</label>
-              <input
-                type="text"
-                className="form-control"
-                value={criteria[field] || ""}
-                onChange={(e) => handleCriteriaChange(field, e.target.value)}
-                placeholder={`Filter by ${field}`}
-              />
-            </div>
-          ))}
+          <div className="d-flex flex-wrap gap-2">
+            {availableFields.map((field) => (
+              <button
+                key={field}
+                type="button"
+                className={`btn btn-sm ${criteria.includes(field) ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => handleCriteriaChange(field)}
+              >
+                {field}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="col-md-6">
           <h5>Field Data</h5>
-          {availableFields.map(f => (
-            <div className="form-check" key={f}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                checked={fields.includes(f)}
-                onChange={() => handleCheckbox(f, fields, setFields)}
-              />
-              <label className="form-check-label">{f}</label>
-            </div>
-          ))}
+          <div className="d-flex flex-wrap gap-2">
+            {availableFields.map(f => (
+              <div className="form-check" key={f}>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  checked={fields.includes(f)}
+                  onChange={() => handleFieldToggle(f)}
+                  id={`field-${f}`}
+                />
+                <label className="form-check-label" htmlFor={`field-${f}`}>
+                  {f}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -123,7 +139,7 @@ const Home = () => {
           value={reportName}
           onChange={e => setReportName(e.target.value)}
         />
-        <button className="btn btn-success" onClick={saveReport}>Simpan Template</button>
+        <button className="btn btn-success" onClick={saveReportTemplate}>Simpan Template</button>
       </div>
 
       <div className="mt-4">
@@ -135,11 +151,11 @@ const Home = () => {
             {reports.map((report, idx) => (
               <div className="list-group-item" key={idx}>
                 <h6>{report.name}</h6>
-                <p><strong>Kriteria:</strong> {report.criteria.join(", ")}</p>
+                <p><strong>Kriteria:</strong> {Object.entries(report.criteria).map(([key, val]) => `${key}: ${val}`).join(", ")}</p>
                 <p><strong>Field:</strong> {report.fields.join(", ")}</p>
-                <button className="btn btn-danger btn-sm me-2" onClick={() => deleteReport(report.name)}>Hapus</button>
-                <button className="btn btn-outline-primary btn-sm me-2">Download PDF</button>
-                <button className="btn btn-outline-success btn-sm">Download Excel</button>
+                <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteReport(report.id)}>Hapus</button>
+                <button className="btn btn-outline-primary btn-sm me-2" onClick={() => handleExport(report.id, 'pdf')}>Download PDF</button>
+                <button className="btn btn-outline-success btn-sm" onClick={() => handleExport(report.id, 'excel')}>Download Excel</button>
               </div>
             ))}
           </div>

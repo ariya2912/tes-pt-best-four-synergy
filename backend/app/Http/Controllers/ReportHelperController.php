@@ -9,14 +9,17 @@ class ReportHelperController extends Controller
 {
     public function getAvailableFields()
     {
-        // Get columns from leads table
-        $columns = DB::getSchemaBuilder()->getColumnListing('leads');
+        // Define field metadata manually for demonstration
+        $fields = [
+            ['name' => 'nama', 'type' => 'string'],
+            ['name' => 'telepon', 'type' => 'string'],
+            ['name' => 'email', 'type' => 'string'],
+            ['name' => 'tipe', 'type' => 'dropdown', 'options' => ['Sedan', 'SUV', 'Truck', 'Motorcycle']],
+            ['name' => 'warna', 'type' => 'string'],
+            ['name' => 'no_hp', 'type' => 'string'],
+            ['name' => 'tanggal', 'type' => 'date'],
+        ];
 
-        // Remove id, timestamps if not needed
-        $fields = array_filter($columns, function ($col) {
-            return !in_array($col, ['id', 'created_at', 'updated_at']);
-        });
-
-        return response()->json(array_values($fields));
+        return response()->json($fields);
     }
 }

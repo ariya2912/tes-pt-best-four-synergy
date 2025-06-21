@@ -8,10 +8,18 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->string('tipe')->nullable();
-            $table->string('warna')->nullable();
-            $table->string('no_hp')->nullable();
-            $table->date('tanggal')->nullable();
+            if (!Schema::hasColumn('leads', 'tipe')) {
+                $table->string('tipe')->nullable();
+            }
+            if (!Schema::hasColumn('leads', 'warna')) {
+                $table->string('warna')->nullable();
+            }
+            if (!Schema::hasColumn('leads', 'no_hp')) {
+                $table->string('no_hp')->nullable();
+            }
+            if (!Schema::hasColumn('leads', 'tanggal')) {
+                $table->date('tanggal')->nullable();
+            }
         });
     }
 

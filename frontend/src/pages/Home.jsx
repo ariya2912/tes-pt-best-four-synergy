@@ -7,7 +7,7 @@ import { exportReportExcel, exportReportPdf } from "../services/api.js";
 
 const Home = () => {
   const [availableFields, setAvailableFields] = useState([]);
-  const [criteria, setCriteria] = useState([]);
+  const [criteria, setCriteria] = useState({});
   const [fields, setFields] = useState([]);
   const [reportName, setReportName] = useState("");
   const [reports, setReports] = useState([]);
@@ -31,10 +31,27 @@ const Home = () => {
     });
   };
 
-  const handleCriteriaChange = (field) => {
-    setCriteria((prev) =>
-      prev.includes(field) ? prev.filter((c) => c !== field) : [...prev, field]
-    );
+  const handleCriteriaChange = (fieldName, value, rangePart = null) => {
+    setCriteria((prev) => {
+      const newCriteria = { ...prev };
+      if (rangePart) {
+        if (!newCriteria[fieldName]) {
+          newCriteria[fieldName] = { from: "", to: "" };
+        }
+        newCriteria[fieldName][rangePart] = value;
+        // Remove if both empty
+        if (!newCriteria[fieldName].from && !newCriteria[fieldName].to) {
+          delete newCriteria[fieldName];
+        }
+      } else {
+        if (value === "" || value === null) {
+          delete newCriteria[fieldName];
+        } else {
+          newCriteria[fieldName] = value;
+        }
+      }
+      return newCriteria;
+    });
   };
 
   const handleFieldToggle = (field) => {
@@ -44,13 +61,13 @@ const Home = () => {
   };
 
   const saveReportTemplate = () => {
-    if (!reportName || criteria.length === 0 || fields.length === 0) {
+    if (!reportName || Object.keys(criteria).length === 0 || fields.length === 0) {
       alert("Nama report, kriteria, dan field harus diisi");
       return;
     }
     saveReport({ name: reportName, criteria, fields }).then(() => {
       setReportName("");
-      setCriteria([]);
+      setCriteria({});
       setFields([]);
       fetchReports();
     });
@@ -117,39 +134,92 @@ const Home = () => {
       </div>
 
       <div className="row">
-        <div className="col-md-6">
-          <h5>Selection Criteria</h5>
-          <div className="d-flex flex-wrap gap-2">
-            {availableFields.map((field) => (
-              <button
-                key={field}
-                type="button"
-                className={`btn btn-sm ${criteria.includes(field) ? 'btn-primary' : 'btn-outline-secondary'}`}
-                onClick={() => handleCriteriaChange(field)}
-              >
-                {field}
-              </button>
-            ))}
-          </div>
+      <div className="col-md-6">
+        <h5>Selection Criteria</h5>
+        <div>
+          {availableFields.map((field) => {
+            if (field.type === "date") {
+              return (
+                <div key={field.name} className="mb-2">
+                  <label>{field.name}</label>
+                  <div className="d-flex gap-2">
+                    <input
+                      type="date"
+                      className="form-control"
+                      placeholder="From"
+                      value={criteria[field.name]?.from || ""}
+                      onChange={(e) =>
+                        handleCriteriaChange(field.name, e.target.value, "from")
+                      }
+                    />
+                    <input
+                      type="date"
+                      className="form-control"
+                      placeholder="To"
+                      value={criteria[field.name]?.to || ""}
+                      onChange={(e) =>
+                        handleCriteriaChange(field.name, e.target.value, "to")
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            } else if (field.type === "dropdown") {
+              return (
+                <div key={field.name} className="mb-2">
+                  <label>{field.name}</label>
+                  <select
+                    className="form-select"
+                    value={criteria[field.name] || ""}
+                    onChange={(e) =>
+                      handleCriteriaChange(field.name, e.target.value)
+                    }
+                  >
+                    <option value="">-- Pilih --</option>
+                    {field.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            } else {
+              return (
+                <div key={field.name} className="mb-2">
+                  <label>{field.name}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={criteria[field.name] || ""}
+                    onChange={(e) =>
+                      handleCriteriaChange(field.name, e.target.value)
+                    }
+                  />
+                </div>
+              );
+            }
+          })}
         </div>
+      </div>
 
         <div className="col-md-6">
           <h5>Field Data</h5>
           <div className="d-flex flex-wrap gap-2">
-            {availableFields.map(f => (
-              <div className="form-check" key={f}>
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  checked={fields.includes(f)}
-                  onChange={() => handleFieldToggle(f)}
-                  id={`field-${f}`}
-                />
-                <label className="form-check-label" htmlFor={`field-${f}`}>
-                  {f}
-                </label>
-              </div>
-            ))}
+          {availableFields.map(f => (
+            <div className="form-check" key={f.name}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={fields.includes(f.name)}
+                onChange={() => handleFieldToggle(f.name)}
+                id={`field-${f.name}`}
+              />
+              <label className="form-check-label" htmlFor={`field-${f.name}`}>
+                {f.name}
+              </label>
+            </div>
+          ))}
           </div>
         </div>
       </div>

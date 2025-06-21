@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import LeadTable from "../components/LeadTable";
 import { getReports, saveReport, deleteReport } from "../services/api.js";
+import { exportReportExcel, exportReportPdf } from "../services/api.js";
 
 const Home = () => {
   const [availableFields, setAvailableFields] = useState([]);
@@ -61,9 +62,31 @@ const Home = () => {
     });
   };
 
-  const handleExport = (id, format) => {
-    // Placeholder for export functionality
-    alert(`Export report ${id} as ${format} - feature to be implemented`);
+
+  const handleExport = async (id, format) => {
+    try {
+      let response;
+      if (format === 'excel') {
+        response = await exportReportExcel(id);
+      } else if (format === 'pdf') {
+        response = await exportReportPdf(id);
+      } else {
+        alert('Format export tidak didukung');
+        return;
+      }
+
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `report_${id}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Gagal mengunduh file: ' + error.message);
+    }
   };
 
   const handleFileChange = e => {
@@ -152,7 +175,7 @@ const Home = () => {
               <div className="list-group-item" key={idx}>
                 <h6>{report.name}</h6>
                 <p><strong>Kriteria:</strong> {Object.entries(report.criteria).map(([key, val]) => `${key}: ${val}`).join(", ")}</p>
-                <p><strong>Field:</strong> {report.fields.join(", ")}</p>
+                <p><strong>Field:</strong> {Array.isArray(report.fields) ? report.fields.join(", ") : String(report.fields)}</p>
                 <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteReport(report.id)}>Hapus</button>
                 <button className="btn btn-outline-primary btn-sm me-2" onClick={() => handleExport(report.id, 'pdf')}>Download PDF</button>
                 <button className="btn btn-outline-success btn-sm" onClick={() => handleExport(report.id, 'excel')}>Download Excel</button>

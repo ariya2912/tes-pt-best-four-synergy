@@ -9,3 +9,6 @@ export const uploadExcel = (formData) => API.post('/upload-excel', formData);
 export const getReports = () => API.get('/report');
 export const saveReport = (data) => API.post('/report', data);
 export const deleteReport = (id) => API.delete(`/report/${id}`);
+
+export const exportReportExcel = (id) => API.get(`/report/${id}/export-excel`, { responseType: 'blob' });
+export const exportReportPdf = (id) => API.get(`/report/${id}/export-pdf`, { responseType: 'blob' });

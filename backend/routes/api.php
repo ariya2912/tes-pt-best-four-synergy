@@ -14,3 +14,6 @@ Route::delete('/report/{id}', [ReportController::class, 'destroy']);
 Route::post('/upload-excel', [ExcelUploadController::class, 'upload']);
 
 Route::get('/report-fields', [ReportHelperController::class, 'getAvailableFields']);
+
+Route::get('/report/{id}/export-excel', [ReportController::class, 'exportExcel']);
+Route::get('/report/{id}/export-pdf', [ReportController::class, 'exportPdf']);
